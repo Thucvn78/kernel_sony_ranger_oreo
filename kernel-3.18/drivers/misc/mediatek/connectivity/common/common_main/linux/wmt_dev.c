@@ -412,6 +412,8 @@ INT32 wmt_dev_read_file(PUINT8 pName, const PPUINT8 ppBufPtr, INT32 offset, INT3
 	/* struct cred *cred = get_task_cred(current); */
 	const struct cred *cred = get_current_cred();
 
+	char pathbuf[256];
+
 	if (!ppBufPtr) {
 		WMT_ERR_FUNC("invalid ppBufptr!\n");
 		return -1;
@@ -419,6 +421,14 @@ INT32 wmt_dev_read_file(PUINT8 pName, const PPUINT8 ppBufPtr, INT32 offset, INT3
 	*ppBufPtr = NULL;
 
 	fd = filp_open(pName, O_RDONLY, 0);
+	if ((!fd || IS_ERR(fd)) && pName && pName[0] != '/') {
+		snprintf(pathbuf, sizeof(pathbuf), "/vendor/firmware/%s", pName);
+		fd = filp_open(pathbuf, O_RDONLY, 0);
+		if (!fd || IS_ERR(fd)) {
+			snprintf(pathbuf, sizeof(pathbuf), "/system/etc/firmware/%s", pName);
+			fd = filp_open(pathbuf, O_RDONLY, 0);
+		}
+	}
 	if (!fd || IS_ERR(fd) || !fd->f_op || !fd->f_op->read) {
 		WMT_ERR_FUNC("failed to open or read!(0x%p, %d, %d, %d)\n", fd, PTR_ERR(fd), cred->fsuid,
 				cred->fsgid);
