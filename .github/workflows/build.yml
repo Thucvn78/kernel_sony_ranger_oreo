@@ -7,7 +7,7 @@ on:
 
 jobs:
   build-kernel:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout kernel source
         uses: actions/checkout@v4
@@ -17,8 +17,12 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
             bc bison build-essential cpio curl flex git \
-            libelf-dev libncurses5-dev libssl-dev python3 python-is-python3 \
+            libelf-dev libncurses5-dev libssl-dev python2 python3 \
             unzip zip zlib1g-dev
+          sudo ln -sf /usr/bin/python2 /usr/local/bin/python
+          sudo ln -sf /usr/bin/python2 /usr/bin/python
+          find kernel-3.18/scripts kernel-3.18/tools -type f \( -name "*.py" -o -name "*.sh" \) -exec chmod +x {} +
+          chmod +x kernel-3.18/tools/dct/DrvGen.py
 
       - name: Fetch aarch64-linux-android-4.9 toolchain
         run: |
