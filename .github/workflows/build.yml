@@ -21,6 +21,7 @@ jobs:
             unzip zip zlib1g-dev
           sudo ln -sf /usr/bin/python2 /usr/local/bin/python
           sudo ln -sf /usr/bin/python2 /usr/bin/python
+          find kernel-3.18 -type f \( -name "*.sh" -o -name "*.pl" -o -name "*.py" \) -exec chmod +x {} +
           chmod -R +x kernel-3.18/scripts kernel-3.18/tools
 
       - name: Fetch aarch64-linux-android-4.9 toolchain
