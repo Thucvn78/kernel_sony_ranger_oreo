@@ -1,0 +1,61 @@
+name: Build Xperia L2 (ranger) Oreo 3.18 Kernel
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main, master ]
+
+jobs:
+  build-kernel:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout kernel source
+        uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            bc bison build-essential cpio curl flex git \
+            libelf-dev libncurses5-dev libssl-dev python3 python-is-python3 \
+            unzip zip zlib1g-dev
+
+      - name: Fetch aarch64-linux-android-4.9 toolchain
+        run: |
+          git clone --depth=1 -b lineage-19.1 \
+            https://github.com/LineageOS/android_prebuilts_gcc_linux-x86_aarch64_aarch64-linux-android-4.9.git \
+            "$GITHUB_WORKSPACE/gcc49"
+
+      - name: Configure and build Image.gz-dtb
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/out"
+          export ARCH=arm64
+          export SUBARCH=arm64
+          export CROSS_COMPILE="$GITHUB_WORKSPACE/gcc49/bin/aarch64-linux-android-"
+          export KBUILD_BUILD_USER=ranger
+          export KBUILD_BUILD_HOST=oreo
+          make -C kernel-3.18 O="$GITHUB_WORKSPACE/out" HOSTCFLAGS="-fcommon -O2" ranger_defconfig
+          make -C kernel-3.18 O="$GITHUB_WORKSPACE/out" HOSTCFLAGS="-fcommon -O2" -j"$(nproc)" Image.gz-dtb
+
+      - name: Verify kernel image symbols
+        run: |
+          ls -lh "$GITHUB_WORKSPACE/out/arch/arm64/boot/"
+          python3 -c '
+          import gzip, zlib, re
+          d = open("out/arch/arm64/boot/Image.gz-dtb", "rb").read()
+          dec = zlib.decompressobj(16 + zlib.MAX_WBITS)
+          k = dec.decompress(d)
+          print("Decompressed kernel size:", len(k))
+          for s in [b"Linux version", b"hwbinder", b"vndbinder", b"r18p0", b"ranger"]:
+              print(s.decode(), "->", s in k)
+          assert b"hwbinder" in k and b"vndbinder" in k, "Missing Oreo binder devices!"
+          '
+
+      - name: Upload kernel artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ranger-oreo-kernel
+          path: |
+            out/arch/arm64/boot/Image.gz-dtb
+            out/.config
+          if-no-files-found: error
