@@ -622,5 +622,5 @@ CONFIG_HAVE_DEBUG_BUGVERBOSE=n
 # CONFIG_MMC_BLOCK_IO_LOG is not set
 # CONFIG_SND_VERBOSE_PROCFS is not set
 # [SM32][RaymondLin] Demo App LCM abnormal workaround begin
-CONFIG_MTK_LCM_PHYSICAL_ROTATION_HW=y
+# CONFIG_MTK_LCM_PHYSICAL_ROTATION_HW is not set
 # [SM32][RaymondLin] Demo App LCM abnormal workaround end
